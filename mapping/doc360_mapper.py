@@ -1,33 +1,4 @@
-"""
-Doc360 → Ava Pipeline Field Mapper
 
-Transforms raw Document360 article rows into the Salesforce-shaped contract
-that the indexing pipeline expects.
-
-Changes based on content team (Magda) responses – SAG-769:
-
-  Q1 – Language: Doc360 has a single English locale ("en") with no GB/US split.
-       Most articles are global English (served to both GB and US users).
-       ShareASale articles carry a "ShareASale" tag and are US-only — their
-       "region" is set to "en_US" so that GB users never receive them.
-       Non-ShareASale articles keep region="en" (global English).
-
-  Q2 – Visibility: hidden=False AND status_name="Published" are both required.
-       Editing a published article temporarily sets it to draft in the admin
-       view; the status_name guard prevents indexing in-progress edits.
-
-  Q3 – Related_Questions__c has no Doc360 equivalent. The FAQ section at the
-       bottom of articles is already captured inside content_text / Answer__c,
-       so the field is set to None and excluded from document assembly for
-       Doc360 articles.
-
-  Q4 – Workspace is derived from the article URL path for future multi-workspace
-       support (advertisers / developers / general). Publisher workspace content
-       is not yet available but the groundwork is in place.
-
-  Q5 – Internal description field (admin-facing, ≤250 chars per Doc360 limits)
-       is parsed from settings_json and surfaced in article metadata.
-"""
 
 import re
 import json
@@ -43,8 +14,7 @@ CSS_ARTIFACT_PATTERN = re.compile(
     r'\s*p\[data-block-id\].*$', flags=re.DOTALL
 )
 
-# Q1: No forced language remapping — Doc360 uses plain "en" for all articles.
-# Keep the dict in case future workspaces introduce other locales.
+
 LANGUAGE_MAP: dict[str, str] = {}
 
 
@@ -148,11 +118,9 @@ def map_doc360_row(raw: dict) -> dict:
     Transform a single raw Doc360 row dict into the pipeline-compatible
     article dict that indexing.py / preprocess_articles expects.
     """
-    # Q1 — Language: use the raw lang_code ("en") without remapping
     lang_code = (raw.get("lang_code") or "en").strip()
     language = LANGUAGE_MAP.get(lang_code, lang_code)
 
-    # Q2 — Visibility: both hidden=False AND status=Published required
     visible = is_published(raw)
 
     content_text = raw.get("content_text") or ""
@@ -162,13 +130,9 @@ def map_doc360_row(raw: dict) -> dict:
     article_id = (raw.get("article_id") or "").strip()
     title = (raw.get("title") or "").strip()
 
-    # Q1 — Tags: "ShareASale" tag marks US-only articles
     tags = _parse_tags(raw.get("tags"))
     is_shareasale = SHAREASALE_TAG in tags
 
-    # Q1 — Region: ShareASale articles are US-only → region="en_US".
-    #       All other Doc360 articles are global English → region="en"
-    #       (served to both GB and US users).
     region = "en_US" if is_shareasale else language
 
     # Q4 — Workspace derived from URL for multi-workspace support
@@ -182,8 +146,6 @@ def map_doc360_row(raw: dict) -> dict:
         "Title": title,
         "Question__c": title,
         "Answer__c": clean_body,
-        # Q3: No Related_Questions__c equivalent — FAQ content is already
-        #     captured inside Answer__c (content_text) for Doc360 articles.
         "Related_Questions__c": None,
         "Language": language,
         "IsMasterLanguage": True,
