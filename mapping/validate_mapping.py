@@ -1,31 +1,4 @@
-"""
-SAG-769 Validation Script — Doc360 → Ava Pipeline
 
-Loads Doc360 and Salesforce sample data, runs both through the full
-pipeline filter chain (preprocess rules → visibility → regional → document
-assembly), and reports pass/fail per article.
-
-Changes based on content team (Magda) responses:
-
-  Q1 – Regional filter updated: Doc360 "en" articles always pass (no GB/US
-       split). SF articles retain existing en_GB / en_US(master) logic.
-       ShareASale-tagged articles are reported separately.
-
-  Q2 – Visibility filter now reflects hidden=False AND status=Published
-       (enforced upstream in doc360_mapper.is_published). Added
-       validate_publish_status() to confirm no draft articles slip through.
-
-  Q3 – Related_Questions__c excluded from Doc360 document assembly; FAQ
-       content is already present in Answer__c. SF articles retain it.
-
-  Q4 – Workspace distribution reported per pipeline run.
-
-  Q5 – Description field presence reported; value truncated to 250 chars
-       by the mapper.
-
-Usage:
-    python datalake_integration/validate_mapping.py
-"""
 
 import os
 import sys
@@ -34,12 +7,9 @@ import logging
 import yaml
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-# doc360-migration/mapping → doc360-migration → chatbot-indexing-pipeline
 PIPELINE_ROOT = os.path.dirname(os.path.dirname(SCRIPT_DIR))
 
-# Allow sibling-module imports (doc360_mapper lives in the same folder)
 sys.path.insert(0, SCRIPT_DIR)
-# Allow imports from the pipeline root if needed
 sys.path.insert(0, PIPELINE_ROOT)
 
 from doc360_mapper import (
@@ -158,7 +128,6 @@ def apply_region(articles: list[dict]) -> list[dict]:
     """
     for a in articles:
         if a.get("from_doc360"):
-            # Preserve the mapper's decision; only fall back if somehow missing
             if not a.get("region"):
                 a["region"] = a.get("Language")
         else:
@@ -200,15 +169,7 @@ def compute_source_urls(articles: list[dict], config: dict) -> list[dict]:
 
 
 def build_documents(articles: list[dict]) -> list[dict]:
-    """
-    Replicate document assembly from indexing.py.
 
-    Q3: Related_Questions__c is excluded from Doc360 article content because:
-      - Doc360 has no equivalent hidden-questions field.
-      - FAQ sections at the bottom of articles are already included in
-        Answer__c (content_text), so no content is lost.
-      - SF articles retain Related_Questions__c in their content.
-    """
     sf_content_columns = ["Question__c", "Answer__c", "Related_Questions__c"]
     doc360_content_columns = ["Question__c", "Answer__c"]
 
@@ -302,12 +263,7 @@ def validate_publish_status(articles: list[dict]) -> int:
 
 
 def report_shareasale_articles(articles: list[dict]) -> None:
-    """
-    Q1: Log ShareASale-tagged articles.
 
-    These are US-only (region="en_US") — they must NOT be served to GB users.
-    Non-ShareASale Doc360 articles carry region="en" and are global English.
-    """
     sas = [a for a in articles if a.get("is_shareasale")]
     non_sas_en = [
         a for a in articles
