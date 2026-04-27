@@ -74,6 +74,26 @@ def apply_visibility_filter(articles: list[dict]) -> list[dict]:
     ]
 
 
+def apply_workspace_filter(articles: list[dict]) -> list[dict]:
+    """
+    Exclude developer workspace articles from the Ava pipeline.
+
+    Decision (SAG-769): developer articles must NOT feed Ava.
+    Only "advertisers" and "general" workspace articles are kept.
+    Non-Doc360 (SF) articles are unaffected.
+    """
+    kept = []
+    for a in articles:
+        if a.get("from_doc360") and a.get("workspace") == "developers":
+            logger.info(
+                "  [EXCLUDED workspace=developers] %s | %s",
+                a.get("Id", "?")[:20], a.get("Title", "?")[:50],
+            )
+            continue
+        kept.append(a)
+    return kept
+
+
 def apply_regional_filter(articles: list[dict]) -> list[dict]:
     """
     Q1 — Updated regional filter.
@@ -334,6 +354,9 @@ def run_pipeline(label: str, articles: list[dict], config: dict) -> list[dict]:
 
     articles = apply_visibility_filter(articles)
     logger.info("  After visibility:       %d", len(articles))
+
+    articles = apply_workspace_filter(articles)
+    logger.info("  After workspace filter: %d", len(articles))
 
     articles = apply_regional_filter(articles)
     logger.info("  After regional filter:  %d", len(articles))
