@@ -21,7 +21,9 @@ from doc360_mapper import (
 logging.basicConfig(level=logging.INFO, format="%(levelname)s | %(message)s")
 logger = logging.getLogger(__name__)
 
-DOC360_CSV = os.path.join(SCRIPT_DIR, "doc360-sample-new.csv")
+# CSV files live one level up (migration root), not inside mapping/
+MIGRATION_ROOT = os.path.dirname(SCRIPT_DIR)
+DOC360_CSV = os.path.join(MIGRATION_ROOT, "doc360-sample-new.csv")
 SF_CSV = os.path.join(SCRIPT_DIR, "salesforce-sample.csv")
 FILTER_CONFIG = os.path.join(PIPELINE_ROOT, "filter_config.yaml")
 
