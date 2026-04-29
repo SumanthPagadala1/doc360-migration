@@ -1,0 +1,48 @@
+# Doc360 Indexing Pipeline Configuration — SAG-767
+
+# Azure AI Search index name for staging
+index_name: "d360-test"
+
+# Embedding model settings (Azure OpenAI)
+embedding_model: "text-embedding-3-small"
+embedding_api_version: "2024-02-15-preview"
+vector_dimensions: 1536
+
+# LangChain index() cleanup mode
+# "incremental" = only add/update changed docs (production)
+# "full" = wipe and rebuild (use for one-off re-indexes)
+cleanup_mode: "incremental"
+
+# Visibility gate — both must be true for an article to be indexed
+visibility:
+  require_published: true
+  require_not_hidden: true
+
+# Workspace filtering
+workspace:
+  excluded:
+    - "developers"
+
+# Content columns used to build page_content (what gets embedded)
+# No Related_Questions__c — FAQ sections are already inside Answer__c
+content_columns:
+  - "Question__c"
+  - "Answer__c"
+
+# Metadata columns stored in the Azure Search index
+metadata_columns:
+  - "Id"
+  - "ArticleCreatedDate"
+  - "Language"
+  - "RecordTypeId"
+  - "Title"
+  - "account_type"
+  - "region"
+  - "client"
+  - "workspace"
+  - "description"
+  - "is_shareasale"
+  - "from_doc360"
+
+# Future Databricks view for Phase 2 ingestion
+databricks_view: "datalake_reportinglayer.sagitta.vw_document360_knowledge__kav"
