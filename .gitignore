@@ -1,6 +1,12 @@
 # Sample / test data — never commit raw content
 *.csv
 
+# Virtual environment
+.venv/
+
+# SQLite record manager databases (local incremental indexing state)
+local_records/
+
 # Python
 __pycache__/
 *.py[cod]
