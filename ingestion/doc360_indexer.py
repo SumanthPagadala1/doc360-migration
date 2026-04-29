@@ -12,7 +12,11 @@ Record manager: SQLRecordManager for incremental de-duplication.
 import logging
 import os
 
-from langchain.indexes import SQLRecordManager, index
+try:
+    from langchain.indexes import SQLRecordManager, index
+except ImportError:
+    from langchain_community.indexes._sql_record_manager import SQLRecordManager
+    from langchain_core.indexing import index
 from langchain_community.vectorstores import AzureSearch
 from langchain_openai import AzureOpenAIEmbeddings
 from langchain_core.documents import Document
