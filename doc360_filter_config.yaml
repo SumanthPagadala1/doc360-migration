@@ -1,5 +1,9 @@
 # Doc360 Indexing Pipeline Configuration — SAG-767
 
+# Environment stage: DEV, STAGING, or PROD
+# Controls which env vars to read (e.g. AZURE_EMBEDDING_API_KEY_DEV)
+stage: "DEV"
+
 # Azure AI Search index name for staging
 index_name: "d360-test"
 

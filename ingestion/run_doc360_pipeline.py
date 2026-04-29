@@ -76,6 +76,12 @@ def parse_args():
         help="Override the LangChain cleanup mode",
     )
     parser.add_argument(
+        "--stage",
+        choices=["DEV", "STAGING", "PROD"],
+        default=None,
+        help="Override the environment stage (DEV, STAGING, PROD)",
+    )
+    parser.add_argument(
         "--config",
         default=os.path.join(MIGRATION_ROOT, "doc360_filter_config.yaml"),
         help="Path to the Doc360 filter config YAML",
@@ -120,6 +126,8 @@ def main():
         config["index_name"] = args.index
     if args.cleanup:
         config["cleanup_mode"] = args.cleanup
+    if args.stage:
+        config["stage"] = args.stage
 
     start = time.monotonic()
 
